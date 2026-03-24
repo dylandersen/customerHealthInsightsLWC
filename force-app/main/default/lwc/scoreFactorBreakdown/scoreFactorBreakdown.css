@@ -86,4 +86,29 @@
 
 .factor-insight { font-size: 0.75rem; color: #706e6b; line-height: 1.5; }
 
+.composite-summary {
+  margin-top: 1rem;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, #f8f8f8 0%, #ffffff 100%);
+  border: 1px solid #e5e5e5;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.composite-label-row { display: flex; align-items: center; gap: 0.5rem; }
+.composite-icon { --slds-c-icon-color-foreground: #4a51c9; --slds-c-icon-color-foreground-default: #4a51c9; }
+.composite-label { font-size: 0.8125rem; font-weight: 700; color: #080707; text-transform: uppercase; letter-spacing: 0.3px; }
+
+.composite-score-row { display: flex; align-items: center; gap: 0.75rem; }
+.composite-score { font-size: 1.5rem; font-weight: 800; }
+.composite-denominator { font-size: 0.875rem; font-weight: 400; color: #706e6b; }
+
+.composite-score-excellent { color: #2e844a; }
+.composite-score-good { color: #4bca81; }
+.composite-score-fair { color: #b8860b; }
+.composite-score-at-risk { color: #e65100; }
+.composite-score-critical { color: #c23934; }
+
 .empty-state-text { color: #706e6b; font-size: 0.875rem; }

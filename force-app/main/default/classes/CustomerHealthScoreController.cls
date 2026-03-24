@@ -41,10 +41,18 @@ public with sharing class CustomerHealthScoreController {
             AND CreatedDate >= :ninetyDaysAgo
         ];
 
+        List<Consumption_Data__c> consumption = [
+            SELECT Id, Data_Date__c, Credits_Consumed__c, Committed_Credits__c
+            FROM Consumption_Data__c
+            WHERE Account__c = :accountId
+            ORDER BY Data_Date__c DESC
+            LIMIT 30
+        ];
+
         Integer supportScore = calcSupport(cases);
         Integer engagementScore = calcEngagement(tasks, events);
         Integer financialScore = calcFinancial(opps);
-        Integer adoptionScore = calcAdoption(contacts);
+        Integer adoptionScore = calcAdoption(contacts, consumption);
         Integer relationshipScore = calcRelationship(contacts, events);
 
         HealthScoreResult result = new HealthScoreResult();
@@ -62,7 +70,7 @@ public with sharing class CustomerHealthScoreController {
             new ScoreFactor('Support Health',    supportScore,      SUPPORT_WEIGHT,     insightSupport(supportScore)),
             new ScoreFactor('Engagement',        engagementScore,   ENGAGEMENT_WEIGHT,  insightEngagement(engagementScore, tasks.size() + events.size())),
             new ScoreFactor('Financial Health',   financialScore,    FINANCIAL_WEIGHT,   insightFinancial(financialScore)),
-            new ScoreFactor('Product Adoption',   adoptionScore,     ADOPTION_WEIGHT,    insightAdoption(adoptionScore, contacts.size())),
+            new ScoreFactor('Product Adoption',   adoptionScore,     ADOPTION_WEIGHT,    insightAdoption(adoptionScore, contacts.size(), consumption)),
             new ScoreFactor('Relationship Depth', relationshipScore, RELATIONSHIP_WEIGHT, insightRelationship(relationshipScore))
         };
 
@@ -126,16 +134,50 @@ public with sharing class CustomerHealthScoreController {
     }
 
     @TestVisible
-    private static Integer calcAdoption(List<Contact> contacts) {
-        if (contacts.isEmpty()) return 20;
-        Integer score = 30;
-        score += Math.min(contacts.size() * 8, 40);
+    private static Integer calcAdoption(List<Contact> contacts, List<Consumption_Data__c> consumption) {
+        Integer score = 0;
+
+        // Contact coverage (up to 35 pts)
+        if (!contacts.isEmpty()) {
+            score += 15;
+            score += Math.min(contacts.size() * 5, 20);
+        }
+
+        // Active contacts in last 30 days (up to 20 pts)
         Integer active = 0;
         for (Contact c : contacts) {
             if (c.LastActivityDate != null && c.LastActivityDate >= Date.today().addDays(-30)) active++;
         }
-        score += Math.min(active * 10, 30);
-        return Math.min(score, 100);
+        score += Math.min(active * 10, 20);
+
+        // Consumption data (up to 45 pts)
+        if (!consumption.isEmpty()) {
+            Consumption_Data__c latest = consumption[0];
+            Integer daysSinceUsage = (latest.Data_Date__c != null)
+                ? latest.Data_Date__c.daysBetween(Date.today()) : 999;
+
+            // Recency bonus (up to 20 pts)
+            if (daysSinceUsage <= 7) score += 20;
+            else if (daysSinceUsage <= 30) score += 15;
+            else if (daysSinceUsage <= 60) score += 10;
+            else if (daysSinceUsage <= 120) score += 5;
+            // > 120 days = 0
+
+            // Utilization ratio bonus (up to 25 pts)
+            if (latest.Committed_Credits__c != null && latest.Committed_Credits__c > 0 && latest.Credits_Consumed__c != null) {
+                Decimal utilPct = (latest.Credits_Consumed__c / latest.Committed_Credits__c) * 100;
+                if (utilPct >= 60) score += 25;
+                else if (utilPct >= 40) score += 20;
+                else if (utilPct >= 20) score += 15;
+                else if (utilPct >= 5) score += 10;
+                else score += 5;
+            }
+        } else {
+            // No consumption data at all
+            score += 5;
+        }
+
+        return Math.max(Math.min(score, 100), 5);
     }
 
     @TestVisible
@@ -197,11 +239,30 @@ public with sharing class CustomerHealthScoreController {
         return 'Weak pipeline and low win rate. Account may be at risk of contraction.';
     }
 
-    private static String insightAdoption(Integer score, Integer contactCount) {
-        if (score >= 80) return 'Broad contact coverage (' + contactCount + ' contacts) with recent activity. Adoption appears strong.';
-        if (score >= 60) return 'Moderate contact engagement (' + contactCount + ' contacts). Expand stakeholder mapping.';
-        if (score >= 40) return 'Limited contact coverage (' + contactCount + ' contacts). Identify additional users and champions.';
-        return 'Very few contacts with minimal activity. Adoption risk is high.';
+    private static String insightAdoption(Integer score, Integer contactCount, List<Consumption_Data__c> consumption) {
+        String consumptionNote = '';
+        if (!consumption.isEmpty()) {
+            Consumption_Data__c latest = consumption[0];
+            Integer daysSince = (latest.Data_Date__c != null)
+                ? latest.Data_Date__c.daysBetween(Date.today()) : 999;
+            if (daysSince <= 7) consumptionNote = ' Active platform usage detected within the last week.';
+            else if (daysSince <= 30) consumptionNote = ' Platform usage recorded in the last 30 days.';
+            else if (daysSince <= 60) consumptionNote = ' Usage data is 1-2 months old — consider checking in on adoption.';
+            else if (daysSince <= 120) consumptionNote = ' No platform usage in over 60 days — adoption may be stalling.';
+            else consumptionNote = ' No recent platform usage detected (120+ days). Immediate adoption review recommended.';
+
+            if (latest.Committed_Credits__c != null && latest.Committed_Credits__c > 0 && latest.Credits_Consumed__c != null) {
+                Decimal utilPct = ((latest.Credits_Consumed__c / latest.Committed_Credits__c) * 100).setScale(1);
+                consumptionNote += ' Credit utilization: ' + utilPct + '%.';
+            }
+        } else {
+            consumptionNote = ' No consumption data available for this account.';
+        }
+
+        if (score >= 80) return 'Broad contact coverage (' + contactCount + ' contacts) with strong adoption signals.' + consumptionNote;
+        if (score >= 60) return 'Moderate contact engagement (' + contactCount + ' contacts). Expand stakeholder mapping.' + consumptionNote;
+        if (score >= 40) return 'Limited contact coverage (' + contactCount + ' contacts). Identify additional users and champions.' + consumptionNote;
+        return 'Very few contacts with minimal activity. Adoption risk is high.' + consumptionNote;
     }
 
     private static String insightRelationship(Integer score) {
@@ -255,21 +316,50 @@ public with sharing class CustomerHealthScoreController {
         m.totalCases = cases.size();
         Integer closedCount = 0;
         Integer highPriCount = 0;
-        Decimal totalResolutionDays = 0;
-        Integer resolvedCount = 0;
+        Set<Id> closedCaseIds = new Set<Id>();
+        Map<Id, Case> closedCaseMap = new Map<Id, Case>();
         for (Case c : cases) {
             if (!c.IsClosed) m.openCases++;
             if (c.IsClosed) {
                 closedCount++;
-                if (c.CreatedDate != null && c.ClosedDate != null) {
-                    Long ms = c.ClosedDate.getTime() - c.CreatedDate.getTime();
-                    totalResolutionDays += Decimal.valueOf(ms) / 86400000;
-                    resolvedCount++;
+                if (c.ClosedDate != null) {
+                    closedCaseIds.add(c.Id);
+                    closedCaseMap.put(c.Id, c);
                 }
             }
             if (c.Priority == 'High' || c.Priority == 'Critical') highPriCount++;
             if (c.IsEscalated) m.escalatedCases++;
         }
+
+        // CTTR: use earliest EmailMessage date as start (handles demo data where CreatedDate = today)
+        Map<Id, DateTime> earliestEmailByCase = new Map<Id, DateTime>();
+        if (!closedCaseIds.isEmpty()) {
+            for (AggregateResult ar : [
+                SELECT ParentId, MIN(MessageDate) earliest
+                FROM EmailMessage WHERE ParentId IN :closedCaseIds
+                GROUP BY ParentId
+            ]) {
+                earliestEmailByCase.put((Id) ar.get('ParentId'), (DateTime) ar.get('earliest'));
+            }
+        }
+
+        Decimal totalResolutionDays = 0;
+        Integer resolvedCount = 0;
+        for (Id caseId : closedCaseIds) {
+            Case c = closedCaseMap.get(caseId);
+            DateTime startDate = earliestEmailByCase.containsKey(caseId)
+                ? earliestEmailByCase.get(caseId)
+                : c.CreatedDate;
+            if (startDate != null) {
+                Long ms = Math.abs(c.ClosedDate.getTime() - startDate.getTime());
+                Decimal days = Decimal.valueOf(ms) / 86400000;
+                if (days >= 0.01) {
+                    totalResolutionDays += days;
+                    resolvedCount++;
+                }
+            }
+        }
+
         m.closedCases = closedCount;
         m.highPriorityCases = highPriCount;
         m.avgResolutionDays = resolvedCount > 0 ? (totalResolutionDays / resolvedCount).setScale(1) : 0;

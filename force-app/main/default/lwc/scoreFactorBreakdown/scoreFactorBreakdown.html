@@ -14,10 +14,6 @@
 
     <div class="slds-p-around_medium">
       <template lwc:if={hasData}>
-        <div class="weight-summary">
-          <span class="weight-summary-label">Total Weight</span>
-          <span class="weight-summary-value">100%</span>
-        </div>
         <div class="factors-list">
           <template for:each={processedFactors} for:item="factor">
             <div key={factor.key} class="factor-item">
@@ -25,11 +21,9 @@
                 <div class="factor-name-section">
                   <lightning-icon icon-name={factor.iconName} size="xx-small" class="factor-icon"></lightning-icon>
                   <span class="factor-name">{factor.name}</span>
-                </div>
-                <div class="factor-badges">
                   <span class="weight-badge">{factor.weight}%</span>
-                  <span class={factor.gradeClass}>{factor.grade}</span>
                 </div>
+                <span class={factor.gradeClass}>{factor.grade}</span>
               </div>
               <div class="factor-bar-container">
                 <div class="factor-bar-track">
@@ -40,6 +34,17 @@
               <div class="factor-insight">{factor.insight}</div>
             </div>
           </template>
+        </div>
+        <div class="composite-summary">
+          <div class="composite-label-row">
+            <lightning-icon icon-name="utility:heart" size="xx-small" class="composite-icon"></lightning-icon>
+            <span class="composite-label">Customer Health Score</span>
+          </div>
+          <div class="composite-score-row">
+            <span class={compositeScoreClass}>{compositeScore}</span>
+            <span class="composite-denominator">/100</span>
+            <span class={compositeGradeClass}>{compositeGrade}</span>
+          </div>
         </div>
       </template>
       <template lwc:else>

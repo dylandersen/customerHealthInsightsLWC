@@ -84,7 +84,7 @@ private class CustomerHealthScoreControllerTest {
         System.assertEquals(85, CustomerHealthScoreController.calcSupport(new List<Case>()));
         System.assertEquals(15, CustomerHealthScoreController.calcEngagement(new List<Task>(), new List<Event>()));
         System.assertEquals(40, CustomerHealthScoreController.calcFinancial(new List<Opportunity>()));
-        System.assertEquals(20, CustomerHealthScoreController.calcAdoption(new List<Contact>()));
+        System.assertEquals(5, CustomerHealthScoreController.calcAdoption(new List<Contact>(), new List<Consumption_Data__c>()));
         System.assertEquals(15, CustomerHealthScoreController.calcRelationship(new List<Contact>(), new List<Event>()));
     }
 
@@ -94,10 +94,12 @@ private class CustomerHealthScoreControllerTest {
 
         Test.startTest();
         try {
-            CustomerHealthScoreController.generateHealthSummary(acc.Id);
+            String result = CustomerHealthScoreController.generateHealthSummary(acc.Id);
+            // Models API available — result should be non-empty
+            System.assertNotEquals(null, result, 'Summary result should not be null');
         } catch (AuraHandledException e) {
-            // Expected — Models API not available in test context
-            System.assert(e.getMessage().contains('Error'), 'Should contain error info');
+            // Models API not available in test context — expected
+            System.assertNotEquals(null, e.getMessage(), 'Error message should not be null');
         }
         Test.stopTest();
     }

@@ -2,9 +2,27 @@ import { LightningElement, api } from "lwc";
 
 export default class ScoreFactorBreakdown extends LightningElement {
   @api factors = [];
+  @api compositeScore = 0;
 
   get hasData() {
     return this.factors && this.factors.length > 0;
+  }
+
+  get compositeGrade() {
+    const s = this.compositeScore || 0;
+    if (s >= 80) return "Excellent";
+    if (s >= 60) return "Good";
+    if (s >= 40) return "Fair";
+    if (s >= 20) return "At Risk";
+    return "Critical";
+  }
+
+  get compositeScoreClass() {
+    return "composite-score composite-score-" + this.compositeGrade.toLowerCase().replace(" ", "-");
+  }
+
+  get compositeGradeClass() {
+    return "factor-grade " + this.gradeClassFor(this.compositeGrade);
   }
 
   get processedFactors() {
