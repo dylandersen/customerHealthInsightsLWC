@@ -1,0 +1,186 @@
+<template>
+  <!-- Alert Cards (moved to top, no left border) -->
+  <template lwc:if={hasAlerts}>
+    <div class="alerts-section">
+      <template for:each={processedAlerts} for:item="alert">
+        <div key={alert.key} class={alert.alertClass}>
+          <div class="alert-header">
+            <lightning-icon icon-name={alert.iconName} size="xx-small" class={alert.iconClass}></lightning-icon>
+            <span class="alert-title">{alert.title}</span>
+            <span class="alert-category">{alert.category}</span>
+          </div>
+          <div class="alert-description">{alert.description}</div>
+        </div>
+      </template>
+    </div>
+  </template>
+
+  <!-- AI Health Insights -->
+  <template lwc:if={accountId}>
+    <div class="ai-section">
+      <div class="ai-section-header">
+        <div class="ai-title-area">
+          <img src={agentforceIcon} alt="" class="ai-header-icon" />
+          <div class="ai-title-text">
+            <span class="ai-title">AI Health Analysis</span>
+            <span class="ai-subtitle">Powered by Agentforce</span>
+          </div>
+        </div>
+        <button class="generate-btn" onclick={handleGenerate} disabled={isGenerating}>
+          &#10024; Generate
+        </button>
+      </div>
+
+      <!-- Loading State -->
+      <template lwc:if={isGeneratingWithoutResult}>
+        <div class="ai-loading-container">
+          <img src={agentforceIcon} alt="Agentforce" class="ai-agentforce-icon" />
+          <div class="ai-spinner"></div>
+          <p class="ai-loading-text">{currentLoadingMessage}</p>
+        </div>
+      </template>
+
+      <!-- Empty State -->
+      <template lwc:if={showAiEmptyState}>
+        <div class="ai-empty-state">
+          <p class="ai-empty-text">Click Generate for AI-powered analysis and actionable recommendations for this account.</p>
+        </div>
+      </template>
+
+      <!-- Result State -->
+      <template lwc:if={hasInsights}>
+        <div class={aiResultWrapperClass}>
+          <div class={aiResultContentClass}>
+            <div class="ai-result-text">
+              <template for:each={parsedSections} for:item="section">
+                <div key={section.key} class="ai-parsed-section">
+                  <div class="ai-section-heading">{section.heading}</div>
+                  <template lwc:if={section.hasParagraph}>
+                    <div class="ai-paragraph">{section.paragraph}</div>
+                  </template>
+                  <template for:each={section.bullets} for:item="bullet">
+                    <div key={bullet.key} class="ai-bullet">{bullet.text}</div>
+                  </template>
+                </div>
+              </template>
+            </div>
+          </div>
+          <template lwc:if={isRegenerating}>
+            <div class="ai-regen-overlay">
+              <div class="ai-spinner" role="status" aria-label="Regenerating..."></div>
+            </div>
+          </template>
+        </div>
+        <div class="ai-disclaimer">
+          <lightning-icon icon-name="utility:info" size="xx-small" class="ai-disclaimer-icon"></lightning-icon>
+          <span class="ai-disclaimer-text">AI-generated analysis. Review for accuracy before acting on recommendations.</span>
+        </div>
+      </template>
+    </div>
+  </template>
+
+  <!-- Engagement Analysis + Account Signals -->
+  <div class="insights-container">
+    <!-- Left: Engagement Analysis -->
+    <lightning-card>
+      <div slot="title">
+        <div class="custom-header">
+          <div class="icon-container engagement-bg">
+            <lightning-icon icon-name="utility:activity" size="small" class="header-icon"></lightning-icon>
+          </div>
+          <div class="title-container">
+            <h2 class="card-title">Engagement Analysis</h2>
+            <div class="powered-by">Powered by Agentforce</div>
+          </div>
+        </div>
+      </div>
+      <div class="slds-p-around_medium">
+        <div class="section-subtitle">
+          <span class="time-range">Last 90 Days</span>
+          <span class="dist-label">Sentiment Distribution</span>
+        </div>
+        <div class="rows-list">
+          <template for:each={processedEngagements} for:item="row">
+            <div key={row.key} class="insight-row">
+              <span class="row-count">{row.totalCount}</span>
+              <span class="row-label">{row.label}</span>
+              <div class="sentiment-bar">
+                <template lwc:if={row.hasNegative}>
+                  <div class="bar-segment segment-negative" style={row.negStyle}></div>
+                </template>
+                <template lwc:if={row.hasMixed}>
+                  <div class="bar-segment segment-mixed" style={row.mixStyle}></div>
+                </template>
+                <template lwc:if={row.hasProfessional}>
+                  <div class="bar-segment segment-professional" style={row.proStyle}></div>
+                </template>
+                <template lwc:if={row.hasPositive}>
+                  <div class="bar-segment segment-positive" style={row.posStyle}></div>
+                </template>
+              </div>
+            </div>
+          </template>
+        </div>
+        <div class="sentiment-legend">
+          <div class="legend-item"><span class="legend-dot dot-negative"></span><span class="legend-text">Negative</span></div>
+          <div class="legend-item"><span class="legend-dot dot-mixed"></span><span class="legend-text">Mixed</span></div>
+          <div class="legend-item"><span class="legend-dot dot-professional"></span><span class="legend-text">Professional</span></div>
+          <div class="legend-item"><span class="legend-dot dot-positive"></span><span class="legend-text">Positive</span></div>
+        </div>
+      </div>
+    </lightning-card>
+
+    <!-- Right: Account Signals -->
+    <lightning-card>
+      <div slot="title">
+        <div class="custom-header">
+          <div class="icon-container signals-bg">
+            <lightning-icon icon-name="utility:magicwand" size="small" class="header-icon"></lightning-icon>
+          </div>
+          <div class="title-container">
+            <h2 class="card-title">Account Signals</h2>
+            <div class="powered-by">Powered by Agentforce</div>
+          </div>
+        </div>
+      </div>
+      <div class="slds-p-around_medium">
+        <div class="section-subtitle">
+          <span class="time-range">Last 90 Days</span>
+          <span class="dist-label">Sentiment Distribution</span>
+        </div>
+        <div class="rows-list">
+          <template for:each={processedTopics} for:item="row">
+            <div key={row.key} class="insight-row">
+              <span class="row-count">{row.totalCount}</span>
+              <span class="row-label">{row.label}</span>
+              <div class="sentiment-bar">
+                <template lwc:if={row.hasNotAnalyzed}>
+                  <div class="bar-segment segment-not-analyzed" style={row.naStyle}></div>
+                </template>
+                <template lwc:if={row.hasNegative}>
+                  <div class="bar-segment segment-negative" style={row.negStyle}></div>
+                </template>
+                <template lwc:if={row.hasMixed}>
+                  <div class="bar-segment segment-mixed" style={row.mixStyle}></div>
+                </template>
+                <template lwc:if={row.hasProfessional}>
+                  <div class="bar-segment segment-professional" style={row.proStyle}></div>
+                </template>
+                <template lwc:if={row.hasPositive}>
+                  <div class="bar-segment segment-positive" style={row.posStyle}></div>
+                </template>
+              </div>
+            </div>
+          </template>
+        </div>
+        <div class="sentiment-legend">
+          <div class="legend-item"><span class="legend-dot dot-not-analyzed"></span><span class="legend-text">Not Analyzed</span></div>
+          <div class="legend-item"><span class="legend-dot dot-negative"></span><span class="legend-text">Negative</span></div>
+          <div class="legend-item"><span class="legend-dot dot-mixed"></span><span class="legend-text">Mixed</span></div>
+          <div class="legend-item"><span class="legend-dot dot-professional"></span><span class="legend-text">Professional</span></div>
+          <div class="legend-item"><span class="legend-dot dot-positive"></span><span class="legend-text">Positive</span></div>
+        </div>
+      </div>
+    </lightning-card>
+  </div>
+</template>

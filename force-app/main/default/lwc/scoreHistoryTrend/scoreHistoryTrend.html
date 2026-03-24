@@ -1,0 +1,85 @@
+<template>
+  <lightning-card>
+    <div slot="title">
+      <div class="custom-header">
+        <div class="icon-container">
+          <lightning-icon icon-name="utility:trending" size="small" class="header-icon"></lightning-icon>
+        </div>
+        <div class="title-container">
+          <h2 class="card-title">Score History</h2>
+          <div class="powered-by">12-Month Health Score Trend</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slds-p-around_medium">
+      <template lwc:if={hasData}>
+        <div class="chart-container">
+          <svg class="history-chart" viewBox={viewBox} preserveAspectRatio="xMidYMid meet">
+            <!-- Background zones -->
+            <rect x={zoneX} y={greenZoneY} width={zoneW} height={greenZoneH} fill="#e8f5e9" opacity="0.5"></rect>
+            <rect x={zoneX} y={yellowZoneY} width={zoneW} height={yellowZoneH} fill="#fff8e1" opacity="0.5"></rect>
+            <rect x={zoneX} y={redZoneY} width={zoneW} height={redZoneH} fill="#fce8e7" opacity="0.5"></rect>
+
+            <!-- Grid lines -->
+            <template for:each={gridLines} for:item="line">
+              <g key={line.key}>
+                <line x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="#e5e5e5" stroke-width="1" stroke-dasharray="4,4"></line>
+                <text x={line.lx} y={line.ly} text-anchor="end" font-size="10" fill="#969492">{line.label}</text>
+              </g>
+            </template>
+
+            <!-- Zone labels -->
+            <text x={zoneLabelX} y={excellentLabelY} text-anchor="end" font-size="9" fill="#2e844a" opacity="0.6">Excellent</text>
+            <text x={zoneLabelX} y={fairLabelY} text-anchor="end" font-size="9" fill="#b8860b" opacity="0.6">Fair</text>
+            <text x={zoneLabelX} y={riskLabelY} text-anchor="end" font-size="9" fill="#c23934" opacity="0.6">At Risk</text>
+
+            <!-- Area fill -->
+            <path d={areaPath} fill={lineColor} opacity="0.08"></path>
+
+            <!-- Line -->
+            <path d={linePath} fill="none" stroke={lineColor} stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></path>
+
+            <!-- Data points + labels -->
+            <template for:each={dataPoints} for:item="pt">
+              <g key={pt.key}>
+                <circle cx={pt.cx} cy={pt.cy} r="14" fill="transparent"
+                        data-index={pt.key} onmouseenter={handleDotHover} onmouseleave={handleDotLeave}></circle>
+                <circle cx={pt.cx} cy={pt.cy} r="5" fill={pt.color} stroke="white" stroke-width="2" class="data-dot"></circle>
+                <template lwc:if={pt.label}>
+                  <text x={pt.lx} y={pt.ly} text-anchor="middle" font-size="9" fill="#706e6b">{pt.label}</text>
+                </template>
+              </g>
+            </template>
+          </svg>
+          <template lwc:if={showTooltip}>
+            <div class="dot-tooltip" style={tooltipStyle}>
+              <span class="tooltip-value">{_tooltipScore}</span>
+              <span class="tooltip-period">{_tooltipLabel}</span>
+            </div>
+          </template>
+        </div>
+
+        <div class="chart-legend">
+          <div class="legend-item">
+            <span class="legend-swatch swatch-green"></span>
+            <span class="legend-label">Excellent (80-100)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-swatch swatch-yellow"></span>
+            <span class="legend-label">Fair (40-79)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-swatch swatch-red"></span>
+            <span class="legend-label">At Risk (0-39)</span>
+          </div>
+        </div>
+      </template>
+      <template lwc:else>
+        <div class="slds-text-align_center slds-p-around_large">
+          <p class="empty-state-text">No score history available.</p>
+        </div>
+      </template>
+    </div>
+  </lightning-card>
+</template>

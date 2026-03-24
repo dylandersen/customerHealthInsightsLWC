@@ -1,0 +1,137 @@
+<template>
+  <div class="app-container">
+    <lightning-card class="header-card">
+      <div class="header-card-content">
+        <div class="header-content">
+          <div class="header-left">
+            <div class="slds-media">
+              <div class="slds-media__figure">
+                <div class="header-icon-container">
+                  <lightning-icon icon-name="utility:heart" size="small" class="header-icon"></lightning-icon>
+                </div>
+              </div>
+              <div class="slds-media__body">
+                <h1 class="header-title">Customer Health Insights</h1>
+                <p class="header-subtitle">Powered by Agentforce ✨</p>
+              </div>
+            </div>
+          </div>
+          <div class="header-right">
+            <div class="instructions-box">
+              <div class="instructions-header">
+                <lightning-icon icon-name="utility:info" size="x-small" class="instructions-header-icon"></lightning-icon>
+                <span class="instructions-title">Quick Start</span>
+              </div>
+              <div class="instructions-content">
+                <div class="instruction-item">
+                  <lightning-icon icon-name="utility:search" size="xx-small" class="instruction-bullet"></lightning-icon>
+                  <span>Select an account below</span>
+                </div>
+                <div class="instruction-item">
+                  <lightning-icon icon-name="utility:heart" size="xx-small" class="instruction-bullet"></lightning-icon>
+                  <span>Health score computes automatically</span>
+                </div>
+                <div class="instruction-item">
+                  <lightning-icon icon-name="utility:preview" size="xx-small" class="instruction-bullet"></lightning-icon>
+                  <span>Explore factors, trends &amp; risk alerts</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="account-selection-container">
+          <div class="account-picker-wrapper">
+            <lightning-record-picker
+              label="Select Account"
+              placeholder="Search for an account to analyze..."
+              object-api-name="Account"
+              value={selectedAccountId}
+              onchange={handleAccountChange}
+              class="account-picker"
+            ></lightning-record-picker>
+          </div>
+        </div>
+
+        <div class="features-grid">
+          <div class="feature-box">
+            <div class="feature-icon-wrapper score-gradient">
+              <lightning-icon icon-name="utility:heart" size="small" class="feature-icon"></lightning-icon>
+            </div>
+            <div class="feature-text">
+              <h3 class="feature-title">Health Score</h3>
+              <p class="feature-description">Composite 0-100 score with grade, trend, and factor-weighted breakdown.</p>
+            </div>
+          </div>
+          <div class="feature-box">
+            <div class="feature-icon-wrapper factor-gradient">
+              <lightning-icon icon-name="utility:rows" size="small" class="feature-icon"></lightning-icon>
+            </div>
+            <div class="feature-text">
+              <h3 class="feature-title">Factor Analysis</h3>
+              <p class="feature-description">Weighted scoring across Support, Engagement, Financial, Adoption &amp; Relationship.</p>
+            </div>
+          </div>
+          <div class="feature-box">
+            <div class="feature-icon-wrapper history-gradient">
+              <lightning-icon icon-name="utility:trending" size="small" class="feature-icon"></lightning-icon>
+            </div>
+            <div class="feature-text">
+              <h3 class="feature-title">Score Trend</h3>
+              <p class="feature-description">12-month score history with color-coded health zones.</p>
+            </div>
+          </div>
+          <div class="feature-box">
+            <div class="feature-icon-wrapper alert-gradient">
+              <lightning-icon icon-name="utility:warning" size="small" class="feature-icon"></lightning-icon>
+            </div>
+            <div class="feature-text">
+              <h3 class="feature-title">Risk Alerts</h3>
+              <p class="feature-description">Automated alerts for at-risk factors with actionable recommendations.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </lightning-card>
+
+    <template lwc:if={showLoadingState}>
+      <div class="loading-container">
+        <img src={agentforceIcon} alt="Agentforce" class="agentforce-icon" />
+        <p class="loading-text">{currentLoadingMessage}</p>
+      </div>
+    </template>
+
+    <template lwc:if={hasError}>
+      <div class="slds-box slds-theme_error slds-m-around_medium">
+        <p class="slds-text-color_error">{errorMessage}</p>
+      </div>
+    </template>
+
+    <template lwc:if={hasData}>
+      <div class="content-section">
+        <div class="row-two-col">
+          <div class="component-wrapper">
+            <c-health-score-card health-data={healthData}></c-health-score-card>
+          </div>
+          <div class="component-wrapper">
+            <c-score-factor-breakdown factors={factors}></c-score-factor-breakdown>
+          </div>
+        </div>
+        <div class="row-full">
+          <c-health-action-alerts alerts={alerts} metrics={metrics} engagements={engagements} topics={topics} account-id={selectedAccountId}></c-health-action-alerts>
+        </div>
+        <div class="row-full">
+          <c-score-history-trend history-data={scoreHistory} current-score={healthData.compositeScore}></c-score-history-trend>
+        </div>
+      </div>
+    </template>
+
+    <template lwc:if={showEmptyState}>
+      <div class="empty-state">
+        <lightning-icon icon-name="utility:search" size="large" class="empty-state-icon"></lightning-icon>
+        <h2 class="empty-title">Select an Account to Begin</h2>
+        <p class="empty-subtitle">Choose an account from the picker above to compute customer health insights</p>
+      </div>
+    </template>
+  </div>
+</template>

@@ -1,0 +1,154 @@
+<template>
+  <lightning-card>
+    <div slot="title">
+      <div class="custom-header">
+        <div class="icon-container">
+          <lightning-icon icon-name="utility:heart" size="small" class="header-icon"></lightning-icon>
+        </div>
+        <div class="title-container">
+          <h2 class="card-title">Customer Health Score</h2>
+          <div class="powered-by">Composite Score &amp; Key Metrics</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slds-p-around_medium">
+      <template lwc:if={hasData}>
+        <div class="health-overview-container">
+          <div class="health-gauge-section">
+            <div class="circular-progress-container">
+              <svg class="circular-progress" width="180" height="180" viewBox="0 0 180 180">
+                <circle cx="90" cy="90" r="76" fill="none" stroke="#e5e5e5" stroke-width="10"></circle>
+                <circle cx="90" cy="90" r="76" fill="none" stroke={scoreColor} stroke-width="10"
+                  stroke-linecap="round" stroke-dasharray={gaugeDashArray} stroke-dashoffset={gaugeDashOffset}
+                  transform="rotate(-90 90 90)" class="progress-ring"></circle>
+              </svg>
+              <div class="gauge-content">
+                <div class="score-large">{healthData.compositeScore}</div>
+                <div class="score-denominator">/100</div>
+              </div>
+            </div>
+            <div class={gradeClass}>{gradeDisplay}</div>
+            <div class="gauge-label">CUSTOMER HEALTH</div>
+          </div>
+
+          <div class="health-details-section">
+            <div class="metric-card trend-card">
+              <div class="metric-header">
+                <lightning-icon icon-name={trendIcon} size="xx-small" class={trendIconClass}></lightning-icon>
+                <span>TREND</span>
+              </div>
+              <div class={trendValueClass}>{trendDisplay}</div>
+              <div class="metric-sub">90-day direction</div>
+            </div>
+
+            <div class={churnCardClass}>
+              <div class="metric-header">
+                <span class="churn-emoji">{churnEmoji}</span>
+                <span>CHURN RISK</span>
+              </div>
+              <div class={churnValueClass}>{churnRiskLevel}</div>
+              <div class="metric-sub">{churnRiskSub}</div>
+            </div>
+
+            <div class="metric-card engagement-card">
+              <div class="metric-header">
+                <lightning-icon icon-name="utility:date_time" size="xx-small" class="metric-icon engagement-icon"></lightning-icon>
+                <span>ENGAGEMENT</span>
+              </div>
+              <div class="metric-value">{activitiesDisplay}</div>
+              <div class="metric-sub">touchpoints (90d)</div>
+            </div>
+
+            <div class="metric-card pipeline-card">
+              <div class="metric-header">
+                <lightning-icon icon-name="utility:trending" size="xx-small" class="metric-icon pipeline-icon"></lightning-icon>
+                <span>PIPELINE</span>
+              </div>
+              <div class="metric-value">{pipelineDisplay}</div>
+              <div class="metric-sub">{activeOppsDisplay} active opps</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="activity-breakdown">
+          <div class="activity-header">
+            <lightning-icon icon-name="utility:activity" size="xx-small" class="activity-header-icon"></lightning-icon>
+            <span class="activity-title">Activity Breakdown (90 Days)</span>
+          </div>
+          <div class="activity-grid">
+            <div class="activity-tile">
+              <lightning-icon icon-name="utility:call" size="xx-small" class="act-icon act-calls"></lightning-icon>
+              <span class="act-val">{healthData.metrics.callCount}</span>
+              <span class="act-lbl">Calls</span>
+            </div>
+            <div class="activity-tile">
+              <lightning-icon icon-name="utility:event" size="xx-small" class="act-icon act-meetings"></lightning-icon>
+              <span class="act-val">{healthData.metrics.meetingCount}</span>
+              <span class="act-lbl">Meetings</span>
+            </div>
+            <div class="activity-tile">
+              <lightning-icon icon-name="utility:email" size="xx-small" class="act-icon act-email-msg"></lightning-icon>
+              <span class="act-val">{healthData.metrics.emailMessageCount}</span>
+              <span class="act-lbl">Emails Sent</span>
+            </div>
+            <div class="activity-tile">
+              <lightning-icon icon-name="utility:task" size="xx-small" class="act-icon act-email-tasks"></lightning-icon>
+              <span class="act-val">{healthData.metrics.emailCount}</span>
+              <span class="act-lbl">Email Tasks</span>
+            </div>
+            <div class="activity-tile">
+              <lightning-icon icon-name="utility:check" size="xx-small" class="act-icon act-done"></lightning-icon>
+              <span class="act-val">{healthData.metrics.completedTasks}</span>
+              <span class="act-lbl">Tasks Done</span>
+            </div>
+            <div class="activity-tile">
+              <lightning-icon icon-name="utility:clock" size="xx-small" class="act-icon act-open"></lightning-icon>
+              <span class="act-val">{healthData.metrics.openTasks}</span>
+              <span class="act-lbl">Tasks Open</span>
+            </div>
+            <div class="activity-tile">
+              <lightning-icon icon-name="utility:groups" size="xx-small" class="act-icon act-contacts"></lightning-icon>
+              <span class="act-val">{contactsDisplay}</span>
+              <span class="act-lbl">Contacts</span>
+            </div>
+            <div class="activity-tile">
+              <lightning-icon icon-name="utility:priority" size="xx-small" class="act-icon act-escalated"></lightning-icon>
+              <span class="act-val">{healthData.metrics.escalatedCases}</span>
+              <span class="act-lbl">Escalated</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="activity-breakdown">
+          <div class="activity-header">
+            <lightning-icon icon-name="utility:case" size="xx-small" class="activity-header-icon case-header-icon"></lightning-icon>
+            <span class="activity-title">Case Metrics (90 Days)</span>
+          </div>
+          <div class="activity-grid">
+            <div class="activity-tile">
+              <lightning-icon icon-name="utility:open_folder" size="xx-small" class="act-icon act-open-cases"></lightning-icon>
+              <span class="act-val">{openCasesCount}</span>
+              <span class="act-lbl">Open Cases</span>
+            </div>
+            <div class="activity-tile">
+              <lightning-icon icon-name="utility:check" size="xx-small" class="act-icon act-closed-cases"></lightning-icon>
+              <span class="act-val">{closedCasesCount}</span>
+              <span class="act-lbl">Closed Cases</span>
+            </div>
+            <div class="activity-tile">
+              <lightning-icon icon-name="utility:priority" size="xx-small" class="act-icon act-high-pri"></lightning-icon>
+              <span class="act-val">{highPriorityCasesCount}</span>
+              <span class="act-lbl">High Priority</span>
+            </div>
+            <div class="activity-tile">
+              <lightning-icon icon-name="utility:clock" size="xx-small" class="act-icon act-resolution"></lightning-icon>
+              <span class="act-val">{avgResolutionDisplay}</span>
+              <span class="act-lbl">CTTR</span>
+            </div>
+          </div>
+        </div>
+      </template>
+    </div>
+  </lightning-card>
+</template>

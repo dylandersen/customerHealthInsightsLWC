@@ -1,0 +1,52 @@
+<template>
+  <lightning-card>
+    <div slot="title">
+      <div class="custom-header">
+        <div class="icon-container">
+          <lightning-icon icon-name="utility:rows" size="small" class="header-icon"></lightning-icon>
+        </div>
+        <div class="title-container">
+          <h2 class="card-title">Score Factors</h2>
+          <div class="powered-by">Weighted Factor Breakdown</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slds-p-around_medium">
+      <template lwc:if={hasData}>
+        <div class="weight-summary">
+          <span class="weight-summary-label">Total Weight</span>
+          <span class="weight-summary-value">100%</span>
+        </div>
+        <div class="factors-list">
+          <template for:each={processedFactors} for:item="factor">
+            <div key={factor.key} class="factor-item">
+              <div class="factor-header-row">
+                <div class="factor-name-section">
+                  <lightning-icon icon-name={factor.iconName} size="xx-small" class="factor-icon"></lightning-icon>
+                  <span class="factor-name">{factor.name}</span>
+                </div>
+                <div class="factor-badges">
+                  <span class="weight-badge">{factor.weight}%</span>
+                  <span class={factor.gradeClass}>{factor.grade}</span>
+                </div>
+              </div>
+              <div class="factor-bar-container">
+                <div class="factor-bar-track">
+                  <div class={factor.barClass} style={factor.barStyle}></div>
+                </div>
+                <span class="factor-score">{factor.score}</span>
+              </div>
+              <div class="factor-insight">{factor.insight}</div>
+            </div>
+          </template>
+        </div>
+      </template>
+      <template lwc:else>
+        <div class="slds-text-align_center slds-p-around_large">
+          <p class="empty-state-text">No factor data available.</p>
+        </div>
+      </template>
+    </div>
+  </lightning-card>
+</template>
